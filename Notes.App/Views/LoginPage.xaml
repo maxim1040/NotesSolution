@@ -1,0 +1,15 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Notes.App.ViewModels"
+             x:Class="Notes.App.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Login">
+
+	<VerticalStackLayout Padding="24" Spacing="12">
+		<Entry Placeholder="Email" Text="{Binding Email}" Keyboard="Email"/>
+		<Entry Placeholder="Wachtwoord" Text="{Binding Password}" IsPassword="True"/>
+
+		<Button Text="Inloggen" Command="{Binding LoginAsyncCommand}" />
+		<Button Text="Registreren" Command="{Binding RegisterAsyncCommand}" />
+	</VerticalStackLayout>
+</ContentPage>

@@ -1,0 +1,25 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Notes.App.Views.NotesPage"
+             Title="Notities">
+	
+    <VerticalStackLayout>
+        <Button Text="+" Command="{Binding AddAsyncCommand}"/>
+        <CollectionView ItemsSource="{Binding Items}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="12" ColumnDefinitions="*,Auto">
+                        <VerticalStackLayout>
+                            <Entry Text="{Binding Title}"/>
+                            <Editor Text="{Binding Content}" AutoSize="TextChanges"/>
+                            <Button Text="Bewaar" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SaveAsyncCommand}" CommandParameter="{Binding .}"/>
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="Verwijder"
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAsyncCommand}"
+                                CommandParameter="{Binding .}"/>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </VerticalStackLayout>
+</ContentPage>
