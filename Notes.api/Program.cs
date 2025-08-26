@@ -27,7 +27,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(opt =>
 // JWT
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "NotesApi";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "NotesApp";
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "DEV_ONLY_CHANGE_ME_TO_A_LONG_RANDOM_KEY";
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "30dbc6cb628bef5bc6d414509192935e";
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
