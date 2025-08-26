@@ -8,9 +8,9 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- EF + Identity ----------
+// EF + Identity
 builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Defaultconnection")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
 
 builder.Services.AddIdentityCore<ApplicationUser>(opt =>
 {
@@ -24,7 +24,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(opt =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddSignInManager<SignInManager<ApplicationUser>>();
 
-// ---------- JWT ----------
+// JWT
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "NotesApi";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "NotesApp";
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "DEV_ONLY_CHANGE_ME_TO_A_LONG_RANDOM_KEY";
@@ -44,7 +44,7 @@ builder.Services
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.FromMinutes(2) 
+            ClockSkew = TimeSpan.FromMinutes(2)
         };
     });
 
@@ -56,11 +56,10 @@ builder.Services.AddSwaggerGen();
 
 // CORS (dev)
 builder.Services.AddCors(opt => opt.AddPolicy("dev", p =>
-{
-    p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
-}));
+    p.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()));
 
 var app = builder.Build();
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -74,5 +73,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

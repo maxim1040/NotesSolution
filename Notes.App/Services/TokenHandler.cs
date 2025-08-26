@@ -1,5 +1,4 @@
-﻿// Services/TokenHandler.cs
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 
 namespace Notes.App.Services;
@@ -24,6 +23,7 @@ public class TokenHandler : DelegatingHandler
             if (await _auth.RefreshAsync())
             {
                 response.Dispose();
+
                 var retry = await request.CloneAsync();
                 var newToken = await _auth.GetAccessTokenAsync();
                 if (!string.IsNullOrWhiteSpace(newToken))
@@ -31,8 +31,8 @@ public class TokenHandler : DelegatingHandler
 
                 return await base.SendAsync(retry, ct);
             }
+            // Laat 401 door: UI beslist om uit te loggen
         }
-
         return response;
     }
 
@@ -54,8 +54,6 @@ static class HttpRequestMessageCloneExtensions
             VersionPolicy = req.VersionPolicy,
 #endif
         };
-
-        
         foreach (var h in req.Headers)
             clone.Headers.TryAddWithoutValidation(h.Key, h.Value);
 
@@ -71,7 +69,6 @@ static class HttpRequestMessageCloneExtensions
 
             clone.Content = newContent;
         }
-
         return clone;
     }
 }

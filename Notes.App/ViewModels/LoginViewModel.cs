@@ -7,11 +7,11 @@ namespace Notes.App.ViewModels;
 public partial class LoginViewModel : ObservableObject
 {
     private readonly AuthService _auth;
+    private readonly IServiceProvider _sp;
 
     [ObservableProperty] private string email = string.Empty;
     [ObservableProperty] private string password = string.Empty;
     [ObservableProperty] private bool isBusy;
-    private readonly IServiceProvider _sp;
 
     public IAsyncRelayCommand LoginAsyncCommand { get; }
     public IAsyncRelayCommand RegisterAsyncCommand { get; }
@@ -31,22 +31,21 @@ public partial class LoginViewModel : ObservableObject
         try
         {
             var ok = await _auth.LoginAsync(Email, Password);
-            if (ok)
+            if (!ok)
             {
-                var userId = await _auth.EnsureUserIdAsync();
-                if (!string.IsNullOrWhiteSpace(userId))
-                {
-                    var db = _sp.GetRequiredService<LocalDb>();
-                    await db.UseUserAsync(userId);
-                }
+                await Application.Current.MainPage.DisplayAlert("Login", "Mislukt", "OK");
+                return;
+            }
 
-                Application.Current!.MainPage = new AppShell();
-                await Shell.Current.GoToAsync("//notes");
-            }
-            else
+            var uid = await _auth.EnsureUserIdAsync();
+            if (!string.IsNullOrWhiteSpace(uid))
             {
-                await Application.Current!.MainPage.DisplayAlert("Login", "Mislukt", "OK");
+                var db = _sp.GetRequiredService<LocalDb>();
+                await db.UseUserAsync(uid);
             }
+
+            Application.Current.MainPage = new AppShell();
+            await Shell.Current.GoToAsync("//notes");
         }
         finally { IsBusy = false; }
     }

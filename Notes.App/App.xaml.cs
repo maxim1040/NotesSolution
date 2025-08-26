@@ -1,26 +1,65 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using Notes.App.Views;
+﻿using Notes.App.Views;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace Notes.App;
+
 public partial class App : Application
 {
+    private readonly IServiceProvider _sp;
+
     public App(IServiceProvider sp)
     {
         InitializeComponent();
+        _sp = sp;
 
-        var token = SecureStorage.GetAsync(Constants.AccessTokenKey).GetAwaiter().GetResult();
-        if (IsTokenValid(token))
+        // tijdelijke “splash/loading” pagina zodat constructor licht blijft
+        MainPage = new ContentPage
         {
-            // (optioneel) koppel LocalDb aan user_id uit SecureStorage
-            var uid = SecureStorage.GetAsync("user_id").GetAwaiter().GetResult();
-            if (!string.IsNullOrWhiteSpace(uid))
-                sp.GetRequiredService<Notes.App.Services.LocalDb>().UseUserAsync(uid).GetAwaiter().GetResult();
+            Content = new ActivityIndicator
+            {
+                IsRunning = true,
+                VerticalOptions = LayoutOptions.Center,
+                HorizontalOptions = LayoutOptions.Center
+            }
+        };
 
-            MainPage = new AppShell();
+        // Start async init op de UI-thread
+        MainThread.BeginInvokeOnMainThread(async () => await InitializeAsync());
+    }
+
+    private async Task InitializeAsync()
+    {
+        try
+        {
+            var token = await SecureStorage.GetAsync(Constants.AccessTokenKey);
+            if (IsTokenValid(token))
+            {
+                // per-user LocalDb koppelen
+                var uid = await SecureStorage.GetAsync("user_id");
+                if (string.IsNullOrWhiteSpace(uid))
+                {
+                    var auth = _sp.GetRequiredService<Services.AuthService>();
+                    uid = await auth.EnsureUserIdAsync(); // stuurt Bearer mee (zie eerdere patch)
+                }
+
+                if (!string.IsNullOrWhiteSpace(uid))
+                {
+                    var db = _sp.GetRequiredService<Services.LocalDb>();
+                    await db.UseUserAsync(uid); // per-user DB kiezen
+                }
+
+                MainPage = new AppShell();
+            }
+            else
+            {
+                MainPage = _sp.GetRequiredService<LoginPage>();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            MainPage = sp.GetRequiredService<LoginPage>();
+            System.Diagnostics.Debug.WriteLine("Startup error: " + ex);
+            // Vang alles af en val terug op login i.p.v. crash
+            MainPage = _sp.GetRequiredService<LoginPage>();
         }
     }
 
@@ -29,12 +68,11 @@ public partial class App : Application
         if (string.IsNullOrWhiteSpace(jwt)) return false;
         try
         {
-            var handler = new JwtSecurityTokenHandler();
-            var t = handler.ReadJwtToken(jwt);
-            var exp = t.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
-            if (exp is null) return false;
-            var expires = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp));
-            return expires > DateTimeOffset.UtcNow.AddMinutes(1);
+            var t = new JwtSecurityTokenHandler().ReadJwtToken(jwt);
+            var expClaim = t.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+            if (expClaim is null) return false;
+            var exp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim));
+            return exp > DateTimeOffset.UtcNow.AddMinutes(1);
         }
         catch { return false; }
     }

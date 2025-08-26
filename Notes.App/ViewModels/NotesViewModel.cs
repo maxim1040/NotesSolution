@@ -51,36 +51,16 @@ public partial class NotesViewModel : ObservableObject
         if (IsBusy) return; IsBusy = true; UpdateCanExec();
         try
         {
-
-            var token = await SecureStorage.GetAsync(Constants.AccessTokenKey);
-            if (string.IsNullOrWhiteSpace(token))
-            {
-                Application.Current.MainPage = _sp.GetRequiredService<LoginPage>();
-                return;
-            }
-
             if (!_db.IsReady)
             {
                 var uid = await _auth.EnsureUserIdAsync();
-                if (!string.IsNullOrWhiteSpace(uid))
-                    await _db.UseUserAsync(uid);
-                else
-                {
-                    Application.Current.MainPage = _sp.GetRequiredService<LoginPage>();
-                    return;
-                }
+                if (string.IsNullOrWhiteSpace(uid)) return;
+                await _db.UseUserAsync(uid);
             }
 
             var list = await _db.GetNotesAsync();
             Items.Clear();
             foreach (var n in list) Items.Add(n);
-
-            try { await _sync.SyncAsync(); }
-            catch (HttpRequestException ex) when (ex.Message.Contains("401"))
-            {
-                await _auth.LogoutAsync();
-                Application.Current.MainPage = _sp.GetRequiredService<LoginPage>();
-            }
         }
         finally { IsBusy = false; UpdateCanExec(); }
     }
