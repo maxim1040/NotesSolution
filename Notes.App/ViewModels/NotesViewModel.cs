@@ -8,7 +8,8 @@ using Notes.App.Services;
 namespace Notes.App.ViewModels;
 public partial class NotesViewModel : ObservableObject
 {
-    private readonly LocalDb _db; private readonly SyncService _sync;
+    private readonly LocalDb _db; 
+    private readonly SyncService _sync;
     public ObservableCollection<NoteModel> Items { get; } = new();
 
 

@@ -12,33 +12,20 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .ConfigureFonts(fonts => fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"));
-
 #if DEBUG
-        builder.Logging.AddDebug();
-#endif
-
-        // ---------- Services ----------
-        builder.Services.AddSingleton<LocalDb>();
-        builder.Services.AddTransient<TokenHandler>();
-
-#if DEBUG
-        // SSL-bypass voor Android emulator
         var insecure = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true
         };
-
         builder.Services.AddHttpClient<AuthService>()
             .ConfigurePrimaryHttpMessageHandler(() => insecure);
-
         builder.Services.AddHttpClient<ApiClient>()
             .ConfigurePrimaryHttpMessageHandler(() => insecure)
             .AddHttpMessageHandler<TokenHandler>();
 #else
-        builder.Services.AddHttpClient<AuthService>();
-
-        builder.Services.AddHttpClient<ApiClient>()
-            .AddHttpMessageHandler<TokenHandler>();
+builder.Services.AddHttpClient<AuthService>();
+builder.Services.AddHttpClient<ApiClient>()
+    .AddHttpMessageHandler<TokenHandler>();
 #endif
 
         builder.Services.AddSingleton<SyncService>();
