@@ -11,6 +11,7 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty] private string email = string.Empty;
     [ObservableProperty] private string password = string.Empty;
     [ObservableProperty] private bool isBusy;
+    private readonly IServiceProvider _sp;
 
     public IAsyncRelayCommand LoginAsyncCommand { get; }
     public IAsyncRelayCommand RegisterAsyncCommand { get; }
@@ -26,25 +27,28 @@ public partial class LoginViewModel : ObservableObject
 
     private async Task LoginAsync()
     {
-        if (IsBusy) return; IsBusy = true; LoginAsyncCommand.NotifyCanExecuteChanged();
+        if (IsBusy) return; IsBusy = true;
         try
         {
             var ok = await _auth.LoginAsync(Email, Password);
             if (ok)
             {
+                var userId = await _auth.EnsureUserIdAsync();
+                if (!string.IsNullOrWhiteSpace(userId))
+                {
+                    var db = _sp.GetRequiredService<LocalDb>();
+                    await db.UseUserAsync(userId);
+                }
+
                 Application.Current!.MainPage = new AppShell();
-                await Shell.Current.GoToAsync("//notes"); // route in AppShell
+                await Shell.Current.GoToAsync("//notes");
             }
             else
             {
                 await Application.Current!.MainPage.DisplayAlert("Login", "Mislukt", "OK");
             }
         }
-        catch (Exception ex)
-        {
-            await Application.Current!.MainPage.DisplayAlert("Fout", ex.Message, "OK");
-        }
-        finally { IsBusy = false; LoginAsyncCommand.NotifyCanExecuteChanged(); }
+        finally { IsBusy = false; }
     }
 
     private async Task RegisterAsync()

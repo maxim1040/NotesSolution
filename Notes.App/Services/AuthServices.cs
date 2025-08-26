@@ -7,6 +7,7 @@ public class AuthService
 {
     private readonly HttpClient _http;
     public AuthService(HttpClient http) { _http = http; }
+    public record MeResponse(string userId, string email);
 
 
     public record LoginRequest(string Email, string Password);
@@ -39,6 +40,27 @@ public class AuthService
         await SecureStorage.SetAsync(Constants.RefreshTokenKey, data.RefreshToken);
         return true;
     }
+
+    public async Task<string?> EnsureUserIdAsync()
+    {
+        var cached = await SecureStorage.GetAsync("user_id");
+        if (!string.IsNullOrWhiteSpace(cached)) return cached;
+
+        var me = await _http.GetFromJsonAsync<MeResponse>($"{Constants.ApiBase}/api/auth/me");
+        if (me is null || string.IsNullOrWhiteSpace(me.userId)) return null;
+
+        await SecureStorage.SetAsync("user_id", me.userId);
+        return me.userId;
+    }
+
+    public Task LogoutAsync()
+    {
+        SecureStorage.Remove(Constants.AccessTokenKey);
+        SecureStorage.Remove(Constants.RefreshTokenKey);
+        SecureStorage.Remove("user_id");
+        return Task.CompletedTask;
+    }
+
 
     public async Task<(bool ok, List<string> errors)> RegisterAsync(string email, string password)
     {

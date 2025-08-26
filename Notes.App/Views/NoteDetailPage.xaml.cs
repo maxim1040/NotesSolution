@@ -12,7 +12,6 @@ public partial class NoteDetailPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        if (BindingContext is NoteDetailViewModel vm)
-            await vm.InitializeAsync();
+        if (BindingContext is NoteDetailViewModel vm) await vm.InitializeAsync();
     }
 }

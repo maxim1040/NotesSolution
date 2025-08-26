@@ -9,29 +9,29 @@ public static class MauiProgram
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
+
         builder
             .UseMauiApp<App>()
-            .ConfigureFonts(fonts => fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"));
+            .ConfigureFonts(f => f.AddFont("OpenSans-Regular.ttf", "OpenSansRegular"));
 
 #if DEBUG
         builder.Logging.AddDebug();
 #endif
 
+        // System.Net.Http.HttpRequestException: 'Response status code does not indicate success: 401 (Unauthorized).'Services
         builder.Services.AddSingleton<LocalDb>(); 
-        builder.Services.AddSingleton<SyncService>(); 
-        builder.Services.AddTransient<TokenHandler>();
+        builder.Services.AddSingleton<SyncService>();
+        builder.Services.AddTransient<TokenHandler>(); 
 
 #if DEBUG
-        // SSL-bypass voor emulator
+        // SSL-bypass voor Android emulator (DEV ONLY)
         var insecure = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (msg, cert, chain, errors) => true
         };
 
-
         builder.Services.AddHttpClient<AuthService>()
             .ConfigurePrimaryHttpMessageHandler(() => insecure);
-
 
         builder.Services.AddHttpClient<ApiClient>()
             .ConfigurePrimaryHttpMessageHandler(() => insecure)
@@ -42,10 +42,11 @@ public static class MauiProgram
             .AddHttpMessageHandler<TokenHandler>();
 #endif
 
-        // ViewModels & Views 
+        // ViewModels & Views
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<NotesViewModel>();
         builder.Services.AddTransient<NoteDetailViewModel>();
+
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<NotesPage>();
         builder.Services.AddTransient<NoteDetailPage>();

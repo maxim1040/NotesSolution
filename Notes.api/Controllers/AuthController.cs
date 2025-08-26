@@ -23,7 +23,7 @@ public class AuthController : ControllerBase
     public AuthController(UserManager<ApplicationUser> u, SignInManager<ApplicationUser> s, IJwtTokenService j, AppDbContext db)
     { _userMgr = u; _signInMgr = s; _jwt = j; _db = db; }
 
-
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest req)
     {
@@ -37,7 +37,7 @@ public class AuthController : ControllerBase
         return Ok();
     }
 
-
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest req)
     {
@@ -57,7 +57,7 @@ public class AuthController : ControllerBase
 
         return new AuthResponse(access, exp, refresh.Token);
     }
-
+    [AllowAnonymous]
     [HttpPost("refresh")]
     public async Task<ActionResult<AuthResponse>> Refresh(RefreshRequest req)
     {
@@ -83,11 +83,10 @@ public class AuthController : ControllerBase
 
     [Authorize]
     [HttpGet("me")]
-    public async Task<IActionResult> Me()
+    public ActionResult<object> Me()
     {
-        var userId = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-        var user = userId == null ? null : await _userMgr.FindByIdAsync(userId);
-        if (user == null) return NotFound();
-        return Ok(new { user.Id, user.Email });
+        var uid = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        var email = User.Identity?.Name ?? User.FindFirst("email")?.Value;
+        return Ok(new { userId = uid, email });
     }
 }

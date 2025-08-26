@@ -5,19 +5,19 @@
              x:DataType="vm:NoteDetailViewModel"
              Title="{Binding PageTitle}">
 
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Bewaar" Priority="0" Order="Primary"
-                 Command="{Binding SaveCommand}" />
-    </ContentPage.ToolbarItems>
+	<ContentPage.ToolbarItems>
+		<ToolbarItem Text="Bewaar" Command="{Binding SaveCommand}" />
+		<ToolbarItem Text="Verwijder" Command="{Binding DeleteCommand}" Priority="2" Order="Secondary" />
+	</ContentPage.ToolbarItems>
 
-    <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
-            <Entry Placeholder="Titel" Text="{Binding Title}" FontSize="18"/>
-            <Editor HeightRequest="250" Text="{Binding Content}" AutoSize="TextChanges"/>
-            <HorizontalStackLayout>
-                <Button Text="Annuleer" Command="{Binding CancelCommand}" />
-                <Button Text="Bewaar" Command="{Binding SaveCommand}" HorizontalOptions="EndAndExpand"/>
-            </HorizontalStackLayout>
-        </VerticalStackLayout>
-    </ScrollView>
+	<ScrollView>
+		<VerticalStackLayout Padding="16" Spacing="12">
+			<Entry Placeholder="Titel" Text="{Binding Title}" FontSize="18"/>
+			<Editor HeightRequest="250" Text="{Binding Content}" AutoSize="TextChanges"/>
+			<HorizontalStackLayout>
+				<Button Text="Annuleer" Command="{Binding CancelCommand}" />
+				<Button Text="Bewaar" Command="{Binding SaveCommand}" HorizontalOptions="EndAndExpand"/>
+			</HorizontalStackLayout>
+		</VerticalStackLayout>
+	</ScrollView>
 </ContentPage>
