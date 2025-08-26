@@ -4,13 +4,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Notes.Api.Data;
 using Notes.Api.Models;
+using Notes.Api.Services;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// EF + Identity
+// ---------- EF + Identity ----------
 builder.Services.AddDbContext<AppDbContext>(opt =>
-    opt.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+    opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddIdentityCore<ApplicationUser>(opt =>
 {
@@ -21,19 +22,24 @@ builder.Services.AddIdentityCore<ApplicationUser>(opt =>
     opt.Password.RequireUppercase = false;
     opt.Password.RequireNonAlphanumeric = false;
 })
-.AddEntityFrameworkStores<AppDbContext>()
-.AddSignInManager<SignInManager<ApplicationUser>>();
+.AddEntityFrameworkStores<AppDbContext>();
+//.AddSignInManager<SignInManager<ApplicationUser>>();
 
-// JWT
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "NotesApi";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "NotesApp";
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "30dbc6cb628bef5bc6d414509192935e";
+// ---------- JWT Options + Token service ----------
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt")); // bind options
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+// Pak waarden uit configuratie (appsettings.json)
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtIssuer = jwtSection["Issuer"];
+var jwtAudience = jwtSection["Audience"];
+var jwtKey = jwtSection["Key"];
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(o =>
     {
-        o.RequireHttpsMetadata = false;
+        o.RequireHttpsMetadata = false; // dev
         o.SaveToken = true;
         o.TokenValidationParameters = new TokenValidationParameters
         {
@@ -50,6 +56,7 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// ---------- MVC/Swagger/CORS ----------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -60,7 +67,7 @@ builder.Services.AddCors(opt => opt.AddPolicy("dev", p =>
 
 var app = builder.Build();
 
-
+// ---------- Pipeline ----------
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -69,8 +76,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();

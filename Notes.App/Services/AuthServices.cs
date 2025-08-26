@@ -1,4 +1,5 @@
 ﻿// Notes.App/Services/AuthService.cs
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 
@@ -84,19 +85,21 @@ public class AuthService
     // ---- USER INFO ----
     public async Task<string?> EnsureUserIdAsync()
     {
-        // cache?
         var cached = await SecureStorage.GetAsync("user_id");
         if (!string.IsNullOrWhiteSpace(cached)) return cached;
 
         var token = await SecureStorage.GetAsync(Constants.AccessTokenKey);
         if (string.IsNullOrWhiteSpace(token)) return null;
 
-        // Stuur expliciet de Authorization header mee
         using var req = new HttpRequestMessage(HttpMethod.Get, $"{Constants.ApiBase}/api/auth/me");
-        req.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         using var res = await _http.SendAsync(req);
-        if (!res.IsSuccessStatusCode) return null;
+        if (!res.IsSuccessStatusCode)
+        {
+            var body = await res.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"GET /api/auth/me failed: {(int)res.StatusCode} {res.ReasonPhrase}\n{body}");
+        }
 
         var me = await res.Content.ReadFromJsonAsync<MeResponse>();
         if (me is null || string.IsNullOrWhiteSpace(me.userId)) return null;
@@ -104,6 +107,7 @@ public class AuthService
         await SecureStorage.SetAsync("user_id", me.userId);
         return me.userId;
     }
+
 
     // ---- LOGOUT ----
     public Task LogoutAsync()
