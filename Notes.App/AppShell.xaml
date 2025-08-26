@@ -6,7 +6,7 @@
        Shell.FlyoutBehavior="Disabled"
        Title="Notes">
     <TabBar>
-        <ShellContent Title="Notes" Route="notes"
+        <ShellContent Title="Notities" Route="notes"
                   ContentTemplate="{DataTemplate views:NotesPage}" />
     </TabBar>
 </Shell>

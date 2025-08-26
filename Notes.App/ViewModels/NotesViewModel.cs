@@ -4,51 +4,55 @@ using CommunityToolkit.Mvvm.Input;
 using Notes.App.Models;
 using Notes.App.Services;
 
-
 namespace Notes.App.ViewModels;
+
 public partial class NotesViewModel : ObservableObject
 {
-    private readonly LocalDb _db; 
-    private readonly SyncService _sync;
+    private readonly LocalDb _db;
+
     public ObservableCollection<NoteModel> Items { get; } = new();
 
+    [ObservableProperty] private NoteModel? selected;
+    [ObservableProperty] private bool isBusy;
 
-    public NotesViewModel(LocalDb db, SyncService sync) { _db = db; _sync = sync; }
+    public IAsyncRelayCommand RefreshCommand { get; }
+    public IAsyncRelayCommand NewNoteCommand { get; }
+    public IAsyncRelayCommand<NoteModel?> OpenNoteCommand { get; }
 
-
-    [RelayCommand]
-    public async Task LoadAsync()
+    public NotesViewModel(LocalDb db)
     {
-        var list = await _db.GetNotesAsync();
-        Items.Clear(); foreach (var n in list) Items.Add(n);
+        _db = db;
+        RefreshCommand = new AsyncRelayCommand(LoadAsync, () => !IsBusy);
+        NewNoteCommand = new AsyncRelayCommand(NewAsync, () => !IsBusy);
+        OpenNoteCommand = new AsyncRelayCommand<NoteModel?>(OpenAsync, _ => !IsBusy);
     }
 
-
-    [RelayCommand]
-    public async Task AddAsync()
+    private void UpdateCanExec()
     {
-        var n = new NoteModel { Title = "Nieuwe notitie" };
-        await _db.UpsertAsync(n);
-        Items.Insert(0, n);
+        RefreshCommand.NotifyCanExecuteChanged();
+        NewNoteCommand.NotifyCanExecuteChanged();
+        OpenNoteCommand.NotifyCanExecuteChanged();
     }
 
-
-    [RelayCommand]
-    public async Task SaveAsync(NoteModel n)
+    private async Task LoadAsync()
     {
-        n.UpdatedAtUtc = DateTime.UtcNow; n.IsDirty = true;
-        await _db.UpsertAsync(n);
-        await _sync.SyncAsync();
-        await LoadAsync();
+        if (IsBusy) return; IsBusy = true; UpdateCanExec();
+        try
+        {
+            var list = await _db.GetNotesAsync();
+            Items.Clear();
+            foreach (var n in list) Items.Add(n);
+        }
+        finally { IsBusy = false; UpdateCanExec(); }
     }
 
+    private Task NewAsync() =>
+        Shell.Current.GoToAsync("noteDetail"); // geen id => nieuwe note
 
-    [RelayCommand]
-    public async Task DeleteAsync(NoteModel n)
+    private async Task OpenAsync(NoteModel? item)
     {
-        n.IsDeleted = true; n.IsDirty = true;
-        await _db.UpsertAsync(n);
-        await _sync.SyncAsync();
-        await LoadAsync();
+        if (item == null) return;
+        Selected = null; // clear UI selection
+        await Shell.Current.GoToAsync($"noteDetail?id={item.Id}");
     }
 }

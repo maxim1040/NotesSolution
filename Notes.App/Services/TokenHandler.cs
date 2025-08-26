@@ -39,7 +39,6 @@ static class HttpRequestMessageExtensions
     public static HttpRequestMessage Clone(this HttpRequestMessage req)
     {
         var clone = new HttpRequestMessage(req.Method, req.RequestUri);
-        // copy headers + content
         foreach (var h in req.Headers) clone.Headers.TryAddWithoutValidation(h.Key, h.Value);
         if (req.Content != null) clone.Content = new StreamContent(req.Content.ReadAsStream());
         return clone;

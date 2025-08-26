@@ -1,5 +1,5 @@
 ﻿using Notes.App.Models;
-
+using System.Net;
 
 namespace Notes.App.Services;
 public class SyncService
@@ -8,38 +8,68 @@ public class SyncService
     private readonly ApiClient _api;
     public SyncService(LocalDb db, ApiClient api) { _db = db; _api = api; }
 
-
     public async Task SyncAsync()
     {
         if (Connectivity.NetworkAccess != NetworkAccess.Internet) return;
 
-
-        //Push lokale wijzigingen
+        //Push
         var dirty = await _db.GetDirtyAsync();
         foreach (var n in dirty)
         {
-            HttpResponseMessage res;
             if (n.IsDeleted)
             {
-                res = await _api.DeleteAsync(n.Id);
-                if (res.IsSuccessStatusCode) await _db.DeleteAsync(n);
+                var del = await _api.DeleteAsync(n.Id);
+                if (del.IsSuccessStatusCode || del.StatusCode == HttpStatusCode.NotFound)
+                {
+                    await _db.DeleteAsync(n);
+                }
                 continue;
             }
-           
-            res = await _api.UpdateAsync(n);
-            if (!res.IsSuccessStatusCode)
-                res = await _api.CreateAsync(n);
-            if (res.IsSuccessStatusCode)
+
+            //proberen updaten
+            var upd = await _api.UpdateAsync(n);
+            if (upd.IsSuccessStatusCode)
             {
-                n.IsDirty = false; n.UpdatedAtUtc = DateTime.UtcNow;
+                n.IsDirty = false;
+                n.UpdatedAtUtc = DateTime.UtcNow;
                 await _db.UpsertAsync(n);
+                continue;
             }
+
+            // 404 op update? Dan bestond dat Id niet op de server → aanmaken
+            if (upd.StatusCode == HttpStatusCode.NotFound)
+            {
+                var created = await _api.CreateAsync(n);
+                if (created != null)
+                {
+                    var oldId = n.Id;
+
+                    // Map server-waarden terug in lokaal item
+                    n.Id = created.Id;
+                    n.Title = created.Title;
+                    n.Content = created.Content;
+                    n.CreatedAtUtc = created.CreatedAtUtc;
+                    n.UpdatedAtUtc = created.UpdatedAtUtc;
+                    n.IsDirty = false;
+                    n.IsDeleted = false;
+
+                    // Bewaar onder nieuwe server-ID
+                    await _db.UpsertAsync(n);
+
+                    // Oude lokaal record met oldId opruimen als het bestaat
+                    if (oldId != created.Id)
+                        await _db.DeleteByIdAsync(oldId);
+
+                    continue;
+                }
+            }
+
         }
 
-
-        //Pull server data (eenvoudig: alles)
+        //Pull
         var server = await _api.GetNotesAsync();
         if (server == null) return;
+
         foreach (var s in server)
         {
             var local = await _db.GetAsync(s.Id);

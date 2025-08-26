@@ -1,25 +1,45 @@
 ﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Notes.App.ViewModels"
+             xmlns:models="clr-namespace:Notes.App.Models"
              x:Class="Notes.App.Views.NotesPage"
+             x:DataType="vm:NotesViewModel"
              Title="Notities">
-	
-    <VerticalStackLayout>
-        <Button Text="+" Command="{Binding AddAsyncCommand}"/>
-        <CollectionView ItemsSource="{Binding Items}">
-            <CollectionView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="12" ColumnDefinitions="*,Auto">
-                        <VerticalStackLayout>
-                            <Entry Text="{Binding Title}"/>
-                            <Editor Text="{Binding Content}" AutoSize="TextChanges"/>
-                            <Button Text="Bewaar" Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SaveAsyncCommand}" CommandParameter="{Binding .}"/>
-                        </VerticalStackLayout>
-                        <Button Grid.Column="1" Text="Verwijder"
-                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteAsyncCommand}"
-                                CommandParameter="{Binding .}"/>
-                    </Grid>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-    </VerticalStackLayout>
+
+	<ContentPage.ToolbarItems>
+		<ToolbarItem Text="Nieuw" Command="{Binding NewNoteCommand}" />
+		<ToolbarItem Text="Refresh" Command="{Binding RefreshCommand}" />
+	</ContentPage.ToolbarItems>
+
+	<Grid Padding="16" RowDefinitions="Auto,*">
+		<Label Text="Alle notities" FontSize="24" FontAttributes="Bold" />
+
+		<CollectionView Grid.Row="1"
+						ItemsSource="{Binding Items}"
+						SelectionMode="Single"
+						SelectedItem="{Binding Selected, Mode=TwoWay}"
+						SelectionChangedCommand="{Binding OpenNoteCommand}"
+						SelectionChangedCommandParameter="{Binding Selected}">
+			<CollectionView.EmptyView>
+				<VerticalStackLayout Padding="24" Spacing="8" HorizontalOptions="Center" VerticalOptions="Center">
+					<Label Text="Nog geen notities" FontSize="18" HorizontalTextAlignment="Center"/>
+					<Button Text="Maak je eerste notitie" Command="{Binding NewNoteCommand}" />
+				</VerticalStackLayout>
+			</CollectionView.EmptyView>
+
+			<CollectionView.ItemTemplate>
+				<DataTemplate x:DataType="models:NoteModel">
+					<Frame Margin="0,8" Padding="14" HasShadow="True" CornerRadius="16">
+						<HorizontalStackLayout Spacing="12">
+							<Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold"
+								   VerticalOptions="Center" LineBreakMode="TailTruncation" />
+							<Label Text="{Binding UpdatedAtUtc, StringFormat='{0:dd/MM HH:mm}'}"
+								   FontSize="12" TextColor="{DynamicResource SecondaryTextColor}"
+								   HorizontalOptions="EndAndExpand" VerticalOptions="Center"/>
+						</HorizontalStackLayout>
+					</Frame>
+				</DataTemplate>
+			</CollectionView.ItemTemplate>
+		</CollectionView>
+	</Grid>
 </ContentPage>

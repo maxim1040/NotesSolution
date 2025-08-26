@@ -1,0 +1,23 @@
+﻿<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Notes.App.ViewModels"
+             x:Class="Notes.App.Views.NoteDetailPage"
+             x:DataType="vm:NoteDetailViewModel"
+             Title="{Binding PageTitle}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Bewaar" Priority="0" Order="Primary"
+                 Command="{Binding SaveCommand}" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="12">
+            <Entry Placeholder="Titel" Text="{Binding Title}" FontSize="18"/>
+            <Editor HeightRequest="250" Text="{Binding Content}" AutoSize="TextChanges"/>
+            <HorizontalStackLayout>
+                <Button Text="Annuleer" Command="{Binding CancelCommand}" />
+                <Button Text="Bewaar" Command="{Binding SaveCommand}" HorizontalOptions="EndAndExpand"/>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

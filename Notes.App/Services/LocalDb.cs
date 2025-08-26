@@ -19,4 +19,5 @@ public class LocalDb
     public Task<int> UpsertAsync(NoteModel n) => _db.InsertOrReplaceAsync(n);
     public Task<int> DeleteAsync(NoteModel n) => _db.DeleteAsync(n);
     public Task<List<NoteModel>> GetDirtyAsync() => _db.Table<NoteModel>().Where(n => n.IsDirty || n.IsDeleted).ToListAsync();
+    public Task<int> DeleteByIdAsync(Guid id) => _db.DeleteAsync<NoteModel>(id);
 }
